@@ -168,7 +168,7 @@ def load_iwslt_vocab_bk(args, SRC, TRG, data_prefix):
 
 def get_all_words(path):
     all_words = []
-    with open (path, 'r') as file:
+    with open (path, 'r', encoding='utf-8') as file:
         stories = file.readlines()
         for story in stories:
             all_words.extend(story.strip().split())
