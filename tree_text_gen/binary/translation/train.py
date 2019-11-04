@@ -233,7 +233,7 @@ rollin_sampler = samplers.initialize(args)
 
 encoder = LSTMEncoder(model_config, tok2i)
 model = eval(args.decoder)(model_config, tok2i, rollin_sampler, encoder).to(args.device)
-init_embeddings(model.dec_emb, tok2i, args.glovepath)
+#init_embeddings(model.dec_emb, tok2i, args.glovepath)
 print(model)
 # -- oracle
 oracle_flags = {}

@@ -9,3 +9,4 @@ output
 rocstory_plan_write
 test
 Word2Vec
+glove.840B.300d.txt
