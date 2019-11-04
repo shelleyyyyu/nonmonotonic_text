@@ -8,3 +8,4 @@ output
 *.ipynb_checkpoints
 rocstory_plan_write
 test
+Word2Vec
