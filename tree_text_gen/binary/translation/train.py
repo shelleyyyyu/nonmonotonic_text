@@ -14,7 +14,7 @@ from torchtext import data
 
 import tree_text_gen.binary.common.samplers as samplers
 import tree_text_gen.binary.common.constants as constants
-from tree_text_gen.binary.common.util import setup, get_optimizer, log_tensorboard
+from tree_text_gen.binary.common.util import setup, get_optimizer, log_tensorboard, init_embeddings
 from tree_text_gen.binary.common.losses import sequential_set_no_stop_loss, sequential_set_loss
 from tree_text_gen.binary.common.tree import build_tree, tree_to_text, print_tree
 from tree_text_gen.binary.common.oracle import Oracle, LeftToRightOracle
@@ -24,92 +24,6 @@ from tree_text_gen.binary.common.encoder import LSTMEncoder
 from tree_text_gen.binary.translation.args import common_args
 from tree_text_gen.binary.translation.metrics import Metrics
 from tree_text_gen.binary.translation.data import load_iwslt, load_iwslt_vocab
-
-parser = argparse.ArgumentParser()
-common_args(parser)
-args = parser.parse_args()
-args = setup(args)
-
-logger = logging.getLogger()
-logger.setLevel(logging.DEBUG)
-formatter = logging.Formatter('%(asctime)s %(levelname)s: - %(message)s', datefmt='%Y-%m-%d %H:%M:%S')
-args.logger = logger
-
-# -- DATA
-train_data, dev_data, test_data, SRC, TRG = load_iwslt(args)
-tok2i, i2tok, SRC, TRG = load_iwslt_vocab(args, SRC, TRG, args.data_prefix)
-SRC = copy.deepcopy(SRC)
-for data_ in [train_data, dev_data, test_data]:
-    if not data_ is None:
-        data_.fields['src'] = SRC
-
-# NOTE: Only have to sort by source because the encoder uses rnn.pack_padded_sequence and the decoder does not
-sort_key = lambda x: len(x.src)
-trainloader = data.BucketIterator(dataset=train_data, batch_size=args.batch_size, device=args.device, train=True, repeat=False, shuffle=True, sort_key=sort_key, sort_within_batch=True) if not train_data is None else None
-validloader = data.BucketIterator(dataset=dev_data, batch_size=args.batch_size, device=args.device, train=False, repeat=False, shuffle=True, sort_key=sort_key, sort_within_batch=True) if not dev_data is None else None
-testloader = data.BucketIterator(dataset=test_data, batch_size=args.batch_size, device=args.device, train=False, repeat=False, shuffle=False, sort_key=sort_key, sort_within_batch=True) if not test_data is None else None
-
-# -- MODEL
-if args.model_dir is None:
-    model_config = {
-        'fc_dim':        args.fc_dim,
-        'dec_lstm_dim':  args.dec_lstm_dim,
-        'enc_lstm_dim': args.enc_lstm_dim,
-        'dec_n_layers':  args.dec_n_layers,
-        'n_classes':     len(tok2i),
-        'word_emb_dim':  256,  # glove
-        'dropout':       args.dropout,
-        'device':        str(args.device),
-        'longest_label': 10,  # gets adjusted during training
-        'share_inout_emb': args.share_inout_emb,
-        'nograd_emb': args.nograd_emb,
-        'num_dir_enc': 2,
-        'vocab_size': args.vocab_size,
-        'src': args.src,
-        'trg': args.trg,
-        'enc_n_layers': args.num_layers_enc,
-        'batch_size': args.batch_size,
-        'model_type': args.model_type,
-        'aux_end': args.aux_end
-    }
-
-args.n_classes = len(TRG.vocab.stoi)
-rollin_sampler = samplers.initialize(args)
-
-encoder = LSTMEncoder(model_config, tok2i)
-model = eval(args.decoder)(model_config, tok2i, rollin_sampler, encoder).to(args.device)
-
-print(model)
-
-# -- oracle
-oracle_flags = {}
-if 'uniform' in args.oracle:
-    Oracle = Oracle
-elif 'leftright' in args.oracle:
-    Oracle = LeftToRightOracle
-
-# -- loss
-loss_flags = {}
-if args.aux_end:
-    loss_fn = sequential_set_loss
-else:
-    loss_fn = sequential_set_no_stop_loss
-loss_flags['self_teach_beta'] = args.self_teach_beta
-
-# -- save things for eval time loading
-with open(os.path.join(args.log_directory, 'model_config.json'), 'w') as f:
-    json.dump(model_config, f)
-with open(os.path.join(args.log_directory, 'tok2i.json'), 'w') as f:
-    json.dump(tok2i, f)
-
-# -- optimizer
-optim_fn, optim_params = get_optimizer(args.optimizer)
-optimizer = optim_fn(model.parameters(), **optim_params)
-
-# -- globals
-val_metric_best = -1e10
-stop_training = False
-lr = optim_params['lr']
 
 def train_epoch(epoch):
     print('\nTRAINING : Epoch ' + str(epoch))
@@ -150,8 +64,8 @@ def train_epoch(epoch):
             # Training report computed over the last `print_every` batches.
             ms = metrics.report('train')
             ms['train/loss'] = round(np.mean(losses), 2)
-            logs.append('{0} ; loss {1} ; sentence/s {2} ; {3} train {4} '.format(
-                        i+1,
+            logs.append('epoch {0} ; batch {1} loss {2} ; sentence/s {3} ; {4} train {5} '.format(
+                        epoch, i,
                         round(np.mean(losses), 2),
                         int(len(losses) * args.batch_size / (time.time() - last_time)),
                         args.eval_metric,
@@ -173,7 +87,7 @@ def train_epoch(epoch):
             logs[-1] = logs[-1] + metrics.log(vms, 'valid_batch', ['bleu', 'avg_span', 'f1', 'em', 'depth_score'])
             metrics.reset()
 
-            print_samples(samples, (batch.trg[0], None), n=len(batch))
+            print_samples(samples, (batch.trg[0], None), (batch.src[0], None), n=len(batch))
             gt.stamp("validation_batch")
 
             log_tensorboard(ms, step=args.logstep)
@@ -183,8 +97,7 @@ def train_epoch(epoch):
 
         # -- Checkpointing
         if i % args.save_every == 0:
-            print('saving checkpoint at epoch {0} batch {1}'.format(epoch, i))
-            print(os.path.join(args.log_directory, args.expr_name + '.checkpoint'))
+            print('saving checkpoint at epoch {0} batch {1}; path: {2}'.format(epoch, i, os.path.join(args.log_directory, args.expr_name + '.checkpoint')))
             torch.save({
                 'epoch': epoch,
                 'model_state_dict': model.state_dict(),
@@ -207,19 +120,19 @@ def predict_batch(batch):
         model.train()
     return scores, samples
 
-
-def print_samples(samples, data, n=None):
+def print_samples(samples, trg_data, src_data, n=None):
     n = min(n, 5)
     for i in range(n):
         tokensa = [x.split() for x in TRG.reverse(samples[i].unsqueeze(0), unbpe=True)][0]
         root = build_tree(tokensa)
         tokens, nodes = tree_to_text(root)
-        gt_tokens = [x.split() for x in TRG.reverse(data[0][i:i + 1].cpu(), unbpe=True)][0]
+        gt_tokens = [x.split() for x in TRG.reverse(trg_data[0][i:i + 1].cpu(), unbpe=True)][0]
+        src_tokens = [x.split() for x in SRC.reverse(src_data[0][i:i + 1].cpu(), unbpe=True)][0]
+        print('SOURCE:\t%s' % ' '.join(src_tokens))
         print('ACTUAL:\t%s' % ' '.join(gt_tokens))
         print('PRED:\t%s' % ' '.join(tokens))
         print(print_tree(root))
         print()
-
 
 def evaluate(epoch, dataloader, eval_type='valid', final_eval=False):
     global val_metric_best, lr, stop_training
@@ -257,7 +170,6 @@ def evaluate(epoch, dataloader, eval_type='valid', final_eval=False):
                   .format(args.lrshrink, optimizer.param_groups[0]['lr']))
     return eval_metric
 
-
 def adjust(epoch, sampler):
     if epoch <= args.beta_burnin:
         return
@@ -268,6 +180,90 @@ def adjust(epoch, sampler):
           loss_flags['self_teach_beta'] = max(loss_flags['self_teach_beta'] - args.self_teach_beta_step, 0.0)
           log_tensorboard({'self_teach_beta': loss_flags['self_teach_beta']}, step=args.logstep)
 
+
+parser = argparse.ArgumentParser()
+common_args(parser)
+args = parser.parse_args()
+args = setup(args)
+
+logger = logging.getLogger()
+logger.setLevel(logging.DEBUG)
+formatter = logging.Formatter('%(asctime)s %(levelname)s: - %(message)s', datefmt='%Y-%m-%d %H:%M:%S')
+args.logger = logger
+# -- DATA
+#get the train_data / dev_data / test_data / vocabs
+train_data, dev_data, test_data, SRC, TRG = load_iwslt(args)
+tok2i, i2tok, SRC, TRG = load_iwslt_vocab(args, SRC, TRG, args.data_prefix)
+SRC = copy.deepcopy(SRC)
+for data_ in [train_data, dev_data, test_data]:
+    if not data_ is None:
+        data_.fields['src'] = SRC
+
+# NOTE: Only have to sort by source because the encoder uses rnn.pack_padded_sequence and the decoder does not
+sort_key = lambda x: len(x.src)
+trainloader = data.BucketIterator(dataset=train_data, batch_size=args.batch_size, device=-1, train=True, repeat=False, shuffle=True, sort_key=sort_key, sort_within_batch=True) if not train_data is None else None
+validloader = data.BucketIterator(dataset=dev_data, batch_size=args.batch_size, device=-1, train=False, repeat=False, shuffle=True, sort_key=sort_key, sort_within_batch=True) if not dev_data is None else None
+testloader = data.BucketIterator(dataset=test_data, batch_size=args.batch_size, device=-1, train=False, repeat=False, shuffle=False, sort_key=sort_key, sort_within_batch=True) if not test_data is None else None
+# -- MODEL
+if args.model_dir is None:
+    model_config = {
+        'fc_dim':        args.fc_dim,
+        'dec_lstm_dim':  args.dec_lstm_dim,
+        'enc_lstm_dim': args.enc_lstm_dim,
+        'dec_n_layers':  args.dec_n_layers,
+        'n_classes':     len(tok2i),
+        'word_emb_dim':  300,  # glove
+        'dropout':       args.dropout,
+        'device':        str(args.device),
+        'longest_label': 5,  # gets adjusted during training
+        'share_inout_emb': args.share_inout_emb,
+        'nograd_emb': args.nograd_emb,
+        'num_dir_enc': 2,
+        'vocab_size': args.vocab_size,
+        'src': args.src,
+        'trg': args.trg,
+        'enc_n_layers': args.num_layers_enc,
+        'batch_size': args.batch_size,
+        'model_type': args.model_type,
+        'aux_end': args.aux_end
+    }
+
+args.n_classes = len(TRG.vocab.stoi)
+rollin_sampler = samplers.initialize(args)
+
+encoder = LSTMEncoder(model_config, tok2i)
+model = eval(args.decoder)(model_config, tok2i, rollin_sampler, encoder).to(args.device)
+init_embeddings(model.dec_emb, tok2i, args.glovepath)
+print(model)
+# -- oracle
+oracle_flags = {}
+if 'uniform' in args.oracle:
+    Oracle = Oracle
+elif 'leftright' in args.oracle:
+    Oracle = LeftToRightOracle
+
+# -- loss
+loss_flags = {}
+if args.aux_end:
+    loss_fn = sequential_set_loss
+else:
+    loss_fn = sequential_set_no_stop_loss
+loss_flags['self_teach_beta'] = args.self_teach_beta
+
+# -- save things for eval time loading
+with open(os.path.join(args.log_directory, 'model_config.json'), 'w') as f:
+    json.dump(model_config, f)
+with open(os.path.join(args.log_directory, 'tok2i.json'), 'w') as f:
+    json.dump(tok2i, f)
+
+# -- optimizer
+optim_fn, optim_params = get_optimizer(args.optimizer)
+optimizer = optim_fn(model.parameters(), **optim_params)
+
+# -- globals
+val_metric_best = -1e10
+stop_training = False
+lr = optim_params['lr']
 
 """Train model"""
 epoch = 1

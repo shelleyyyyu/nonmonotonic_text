@@ -1,11 +1,12 @@
 def common_args(parser):
     # data, logging, saving, etc.
+    parser.add_argument("--glovepath", type=str, default='/Users/wellecks/own_files/datasets/glove/glove.840B.300d.txt')
     parser.add_argument("--log-base-dir", type=str, default='output/', help="Base directory for output")
     parser.add_argument("--expr-name", type=str, default="ttg", help="Name appended to experiment outputs")
     parser.add_argument("--print-every", type=int, default=100)
     parser.add_argument("--print-batch-every", type=int, default=500)
     parser.add_argument("--save-every", type=int, default=500)
-    parser.add_argument("--datadir", default='/home/sw1986/datasets/iwslt/IWSLT/en-de/')
+    parser.add_argument("--datadir", default='./keyword_data/')
 
     # dataset-specific
     parser.add_argument("--max-tokens", type=int, default=-1)
@@ -62,8 +63,8 @@ def common_args(parser):
     parser.add_argument("--gpu", type=int, default=0, help="GPU ID")
     parser.add_argument("--seed", type=int, default=1234, help="seed")
 
-    parser.add_argument("--src", type=str, default="de")
-    parser.add_argument("--trg", type=str, default="en")
+    parser.add_argument("--src", type=str, default="source")
+    parser.add_argument("--trg", type=str, default="target")
 
     parser.add_argument("--max_len_src", type=int, default=50)
     parser.add_argument("--max_len_trg", type=int, default=50)
@@ -75,7 +76,7 @@ def common_args(parser):
     # other
     parser.add_argument('--mode',type=str, default='train',  choices=['train', 'test'])
     parser.add_argument('--load_vocab', action='store_true', default=True, help='load a pre-computed vocabulary')
-    parser.add_argument('--vocab_size', type=int, default=40000,  help='limit the train set sentences to this many tokens')
+    parser.add_argument('--vocab_size', type=int, default=30000,  help='limit the train set sentences to this many tokens')
     parser.add_argument('--share_vocab',  action='store_true', default=True, help='share vocabulary between src and target')
     parser.add_argument('--model_dir', type=str, default=None, help='Location of the model file. default is None')
 

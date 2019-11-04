@@ -120,7 +120,6 @@ class Metrics(object):
         hypothesis = ' '.join(pred_tokens)
         reference = ' '.join(gt_tokens)
         bleu = corpus_bleu(hypothesis, reference,
-                           smooth='none',
                            use_effective_order=True)
 
         return bleu

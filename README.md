@@ -1,3 +1,8 @@
+#SHELLY READ ME
+python tree_text_gen/binary/translation/train.py --datadir ./keyword_data/ --model-type translation \
+                                                 --beta-burnin 2 --beta-step 0.05 \
+                                                 --self-teach-beta-step 0.05
+
 # Non-Monotonic Sequential Text Generation
 
 PyTorch implementation of the paper:

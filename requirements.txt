@@ -1,7 +1,8 @@
 tqdm
-torch
+torch==0.4.1
 tensorboard_logger
 visdom
 nltk
 jsonlines
 gtimer
+torchtext==0.2.3
