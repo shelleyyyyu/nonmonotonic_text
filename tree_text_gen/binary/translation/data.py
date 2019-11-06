@@ -174,13 +174,21 @@ def get_all_words(path):
             all_words.extend(story.strip().split())
     return all_words
 
-def build_word_collections(max_vocab_cnt = 30000):
-    train_src_filename = './keyword_data/train/train.source'
-    train_tgt_filename = './keyword_data/train/train.target'
-    valid_src_filename = './keyword_data/valid/valid.source'
-    valid_tgt_filename = './keyword_data/valid/valid.target'
-    test_src_filename = './keyword_data/test/test.source'
-    test_tgt_filename = './keyword_data/test/test.target'
+def build_word_collections(isToy, max_vocab_cnt = 30000):
+    if isToy:
+        train_src_filename = './keyword_data_small/train/train.source'
+        train_tgt_filename = './keyword_data_small/train/train.target'
+        valid_src_filename = './keyword_data_small/valid/valid.source'
+        valid_tgt_filename = './keyword_data_small/valid/valid.target'
+        test_src_filename = './keyword_data_small/test/test.source'
+        test_tgt_filename = './keyword_data_small/test/test.target'
+    else:
+        train_src_filename = './keyword_data/train/train.source'
+        train_tgt_filename = './keyword_data/train/train.target'
+        valid_src_filename = './keyword_data/valid/valid.source'
+        valid_tgt_filename = './keyword_data/valid/valid.target'
+        test_src_filename = './keyword_data/test/test.source'
+        test_tgt_filename = './keyword_data/test/test.target'
 
     all_words = get_all_words(train_src_filename) + get_all_words(valid_src_filename) + get_all_words(test_src_filename) + get_all_words(train_tgt_filename) + get_all_words(valid_tgt_filename) + get_all_words(test_tgt_filename)    
     #vocab_count = Counter(all_words).most_common()
@@ -190,9 +198,9 @@ def build_word_collections(max_vocab_cnt = 30000):
     return vocab_count
 
 def load_iwslt_vocab(args, SRC, TRG, data_prefix):
-    vocab_counter = build_word_collections()
-    SRC.vocab = vocab.Vocab(vocab_counter, specials= ['<unk>', constants.PAD_WORD, constants.BOS_WORD, constants.EOS_WORD ])
-    TRG.vocab = vocab.Vocab(vocab_counter, specials= ['<unk>', constants.PAD_WORD, constants.BOS_WORD, constants.EOS_WORD ])
+    vocab_counter = build_word_collections(args.toy)
+    SRC.vocab = vocab.Vocab(vocab_counter, specials= ['<unk>', constants.PAD_WORD, constants.BOS_WORD, constants.EOS_WORD, constants.NODE_END])
+    TRG.vocab = vocab.Vocab(vocab_counter, specials= ['<unk>', constants.PAD_WORD, constants.BOS_WORD, constants.EOS_WORD, constants.NODE_END])
     
     # Replace the special tokens with this project's version.
     SRC.vocab.stoi = defaultdict(vocab._default_unk_index)

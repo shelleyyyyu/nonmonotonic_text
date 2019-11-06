@@ -203,12 +203,10 @@ for data_ in [train_data, dev_data, test_data]:
 sort_key = lambda x: len(x.src)
 print(args.device)
 if not torch.cuda.is_available():
-    print("HERE")
     trainloader = data.BucketIterator(dataset=train_data, batch_size=args.batch_size, device=-1, train=True, repeat=False, shuffle=True, sort_key=sort_key, sort_within_batch=True) if not train_data is None else None
     validloader = data.BucketIterator(dataset=dev_data, batch_size=args.batch_size, device=-1, train=False, repeat=False, shuffle=True, sort_key=sort_key, sort_within_batch=True) if not dev_data is None else None
     testloader = data.BucketIterator(dataset=test_data, batch_size=args.batch_size, device=-1, train=False, repeat=False, shuffle=False, sort_key=sort_key, sort_within_batch=True) if not test_data is None else None
 else:
-    print("HERE 1")
     trainloader = data.BucketIterator(dataset=train_data, batch_size=args.batch_size, device=args.device, train=True, repeat=False, shuffle=True, sort_key=sort_key, sort_within_batch=True) if not train_data is None else None
     validloader = data.BucketIterator(dataset=dev_data, batch_size=args.batch_size, device=args.device, train=False, repeat=False, shuffle=True, sort_key=sort_key, sort_within_batch=True) if not dev_data is None else None
     testloader = data.BucketIterator(dataset=test_data, batch_size=args.batch_size, device=args.device, train=False, repeat=False, shuffle=False, sort_key=sort_key, sort_within_batch=True) if not test_data is None else None

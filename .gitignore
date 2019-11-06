@@ -13,3 +13,5 @@ glove.840B.300d.txt
 iwslt
 iwslt_small
 keyword_data_small
+activate.csh
+venv

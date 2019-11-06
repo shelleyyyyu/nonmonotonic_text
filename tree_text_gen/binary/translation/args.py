@@ -80,3 +80,6 @@ def common_args(parser):
     parser.add_argument('--share_vocab',  action='store_true', default=True, help='share vocabulary between src and target')
     parser.add_argument('--model_dir', type=str, default=None, help='Location of the model file. default is None')
 
+    parser.add_argument("--toy", type=bool, default=False)
+
+
