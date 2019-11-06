@@ -10,3 +10,6 @@ rocstory_plan_write
 test
 Word2Vec
 glove.840B.300d.txt
+iwslt
+iwslt_small
+keyword_data_small
