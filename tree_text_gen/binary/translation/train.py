@@ -190,6 +190,16 @@ logger = logging.getLogger()
 logger.setLevel(logging.DEBUG)
 formatter = logging.Formatter('%(asctime)s %(levelname)s: - %(message)s', datefmt='%Y-%m-%d %H:%M:%S')
 args.logger = logger
+if torch.cuda.is_available():
+    args.device = torch.device('cuda')
+
+print("############ CHECK GPU STATUS ############")
+print(torch.cuda.current_device())
+print(torch.cuda.device(0))
+print(torch.cuda.device_count())
+print(torch.cuda.get_device_name(0))
+print(torch.cuda.is_available())
+print("args.device: %d", %(args.device))
 # -- DATA
 #get the train_data / dev_data / test_data / vocabs
 train_data, dev_data, test_data, SRC, TRG = load_iwslt(args)
@@ -201,7 +211,6 @@ for data_ in [train_data, dev_data, test_data]:
 
 # NOTE: Only have to sort by source because the encoder uses rnn.pack_padded_sequence and the decoder does not
 sort_key = lambda x: len(x.src)
-print(args.device)
 if not torch.cuda.is_available():
     trainloader = data.BucketIterator(dataset=train_data, batch_size=args.batch_size, device=-1, train=True, repeat=False, shuffle=True, sort_key=sort_key, sort_within_batch=True) if not train_data is None else None
     validloader = data.BucketIterator(dataset=dev_data, batch_size=args.batch_size, device=-1, train=False, repeat=False, shuffle=True, sort_key=sort_key, sort_within_batch=True) if not dev_data is None else None
