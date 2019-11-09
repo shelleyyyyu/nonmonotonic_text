@@ -86,7 +86,7 @@ class DataParallel(nn.DataParallel):
 def init_embeddings(emb_layer, tok2ind, pretrained_path):
     n = 0
     seen = set()
-    with open(pretrained_path) as f:
+    with open(pretrained_path, encoding='utf-8') as f:
         for line in tqdm(f, total=2196017):  # Glove
             tok, vec = line.split(' ', 1)
             if tok in tok2ind:

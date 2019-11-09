@@ -18,3 +18,5 @@ venv
 dialogu_small
 dialogue
 models
+__hyp.txt
+__ref.txt
