@@ -3,15 +3,16 @@
 from collections import Counter
 import numpy as np
 import nltk
+import json
 
-def process_data(all_story, write_src_fname, write_tgt_fname):
-	src_f = open (write_src_fname, 'w')
-	tgt_f = open (write_tgt_fname, 'w')
+def process_data(all_story, write_fname):
+	f = open (write_fname, 'w')
 	for story in all_story:
-		src_f.write(" ".join(story['title']) + '\n')
-		tgt_f.write(" ".join(story['keyword']) + '\n')
-	src_f.close()
-	tgt_f.close()
+		key_array = story['title'] + ["<EOT>"] + story['keyword'] + ["<EOK>"]
+		key_dict = {}
+		key_dict["tokens"] = key_array
+		f.write(str(json.dumps(key_dict))+'\n')
+	f.close()
 
 def get_all_words(all_story):
 	all_words = []
@@ -64,11 +65,11 @@ valid_filename = '../rocstory_plan_write/ROCStories_all_merge_tokenize.titlesepk
 test_filename = '../rocstory_plan_write/ROCStories_all_merge_tokenize.titlesepkeysepstory.test'
 
 train_all_story = get_roc_graph(train_filename)
-#process_data(train_all_story, '../rocstory_plan_write/keyword_data/train_source', '../rocstory_plan_write/keyword_data/train_target')
+process_data(train_all_story, '../rocstory_plan_write/keyword_data/train.txt')
 valid_all_story = get_roc_graph(valid_filename)
-#process_data(valid_all_story, '../rocstory_plan_write/keyword_data/valid_source', '../rocstory_plan_write/keyword_data/valid_target')
+process_data(valid_all_story, '../rocstory_plan_write/keyword_data/valid.txt')
 test_all_story = get_roc_graph(test_filename)
-#process_data(test_all_story, '../rocstory_plan_write/keyword_data/test_source', '../rocstory_plan_write/keyword_data/test_target')
+process_data(test_all_story, '../rocstory_plan_write/keyword_data/test.txt')
 
 all_words = get_all_words(train_all_story + valid_all_story + test_all_story)
 print(all_words[:100])

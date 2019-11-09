@@ -161,6 +161,7 @@ def train_epoch(epoch):
             model.eval()
 
             data = next(validloader.__iter__())
+            xs, annots = data
             scores, samples = predict_batch(data)
             model.train()
             metrics.update(scores, samples, data)
@@ -168,7 +169,7 @@ def train_epoch(epoch):
             logs[-1] = logs[-1] + metrics.log(vms, 'valid_batch', ['bleu', 'avg_span', 'f1', 'em', 'depth_score'])
             metrics.reset()
 
-            print_samples(samples, data)
+            print_samples(xs, samples, data)
             gt.stamp("validation_batch")
 
             log_tensorboard(ms, step=args.logstep)
@@ -198,7 +199,7 @@ def predict_batch(data):
     return scores, samples
 
 
-def print_samples(samples, data, n=min(args.batch_size, 5)):
+def print_samples(xs, samples, data, n=min(args.batch_size, 5)):
     for i in range(n):
         tokens = inds2toks(i2tok, samples[i].cpu().tolist())
         root = build_tree(tokens)
@@ -206,9 +207,12 @@ def print_samples(samples, data, n=min(args.batch_size, 5)):
         tokens_levels = [(node.value, node.level) for node in nodes]
         gt_inds = [x for x in data[0][i].cpu().tolist() if x != tok2i['</s>'] and x != tok2i['<p>']]
         gt_tokens = inds2toks(i2tok, gt_inds)
+        src_inds = [x for x in xs[i].cpu().tolist() if x != tok2i['</s>'] and x != tok2i['<p>']]
+        src_tokens = inds2toks(i2tok, src_inds)
+        print('SOURCD:\t%s' % ' '.join(src_tokens))
         print('ACTUAL:\t%s' % ' '.join(gt_tokens))
         print('PRED:\t%s' % ' '.join(tokens))
-        print(' '.join(str(x) for x in tokens_levels))
+        #print(' '.join(str(x) for x in tokens_levels))
         print(print_tree(root))
         print()
 

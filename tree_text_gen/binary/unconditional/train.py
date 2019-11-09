@@ -29,9 +29,9 @@ args = setup(args)
 
 # -- DATA
 if args.dataset == 'personachat':
-    train = load_personachat(os.path.join(args.datadir, 'personachat_all_sentences_train.jsonl'))
-    valid = load_personachat(os.path.join(args.datadir, 'personachat_all_sentences_valid.jsonl'))
-    test = load_personachat(os.path.join(args.datadir, 'personachat_all_sentences_test.jsonl'))
+    train = load_personachat(os.path.join(args.datadir, 'train.txt'))
+    valid = load_personachat(os.path.join(args.datadir, 'valid.txt'))
+    test = load_personachat(os.path.join(args.datadir, 'test.txt'))
     tok2i = build_tok2i(list(chain.from_iterable([d['tokens'] for d in (train + valid)])))
     i2tok = {j: i for i, j in tok2i.items()}
 
@@ -153,8 +153,9 @@ def train_epoch(epoch):
             losses = []
             metrics.reset()
 
+            xs, annots = data
             scores, samples = predict_batch(data)
-            print_samples(samples, data)
+            print_samples(xs, samples, data)
             gt.stamp("validation_batch")
 
             log_tensorboard(ms, step=args.logstep)
@@ -181,14 +182,24 @@ def predict_batch(data):
     return scores, samples
 
 
-def print_samples(samples, data, n=min(args.batch_size, 5)):
+def print_samples(xs, samples, data, n=min(args.batch_size, 5)):
     for i in range(n):
         tokens = inds2toks(i2tok, samples[i].cpu().tolist())
         root = build_tree(tokens)
+        print("#####HERE######")
+        print(tokens)
         tokens, nodes = tree_to_text(root)
         tokens_levels = [(node.value, node.level) for node in nodes]
-        print(' '.join(tokens))
-        print(' '.join(str(x) for x in tokens_levels))
+
+        gt_inds = [x for x in data[0][i].cpu().tolist() if x != tok2i['</s>'] and x != tok2i['<p>']]
+        gt_tokens = inds2toks(i2tok, gt_inds)
+        src_inds = [x for x in xs[i].cpu().tolist() if x != tok2i['</s>'] and x != tok2i['<p>']]
+        src_tokens = inds2toks(i2tok, src_inds)
+        
+        print('SOURCD:\t%s' % ' '.join(src_tokens))
+        print('ACTUAL:\t%s' % ' '.join(gt_tokens))
+        print('PRED:\t%s' % ' '.join(tokens))
+        #print(' '.join(str(x) for x in tokens_levels))
         print(print_tree(root))
         print()
 
