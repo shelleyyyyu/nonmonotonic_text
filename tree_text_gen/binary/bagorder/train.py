@@ -30,10 +30,10 @@ args = setup(args)
 
 # -- DATA
 if args.dataset == 'personachat':
-    train = load_personachat(os.path.join(args.datadir, 'personachat_all_sentences_train.jsonl'))
-    valid = load_personachat(os.path.join(args.datadir, 'personachat_all_sentences_valid.jsonl'))
-    test = load_personachat(os.path.join(args.datadir, 'personachat_all_sentences_test.jsonl'))
-    tok2i = build_tok2i(list(chain.from_iterable([d['tokens'] for d in (train + valid)])))
+    train = load_personachat(os.path.join(args.datadir, 'train.txt'))
+    valid = load_personachat(os.path.join(args.datadir, 'valid.txt'))
+    test = load_personachat(os.path.join(args.datadir, 'test.txt'))
+    tok2i = build_tok2i(list(chain.from_iterable([d['x_tokens'] + d['y_tokens'] for d in (train + valid)])))
     i2tok = {j: i for i, j in tok2i.items()}
 
 args.n_classes = len(tok2i)
@@ -117,13 +117,14 @@ def train_epoch(epoch):
     for i, data in enumerate(trainloader, 0):
         # -- Actual Training
         gt.reset()
-        xs, annots = data
+        xs, ys, annots = data
         xs = xs.to(args.device)
+        ys = ys.to(args.device)
         gt.stamp("load_data")
 
-        oracle = Oracle(xs, model.n_classes, tok2i, i2tok, **oracle_flags)
+        oracle = Oracle(ys, model.n_classes, tok2i, i2tok, **oracle_flags)
         gt.stamp("create_oracle")
-        max_steps = 2*xs.ne(tok2i['<p>']).sum(1).max()+1
+        max_steps = 2*ys.ne(tok2i['<p>']).sum(1).max()+1
         scores, samples, p_oracle = model.forward(xs=xs, oracle=oracle, max_steps=max_steps, return_p_oracle=True)
         gt.stamp("forward")
         loss = loss_fn(scores, samples, p_oracle, tok2i['<end>'], **loss_flags)
@@ -161,7 +162,7 @@ def train_epoch(epoch):
             model.eval()
 
             data = next(validloader.__iter__())
-            xs, annots = data
+            xs, ys, annots = data
             scores, samples = predict_batch(data)
             model.train()
             metrics.update(scores, samples, data)
@@ -169,7 +170,7 @@ def train_epoch(epoch):
             logs[-1] = logs[-1] + metrics.log(vms, 'valid_batch', ['bleu', 'avg_span', 'f1', 'em', 'depth_score'])
             metrics.reset()
 
-            print_samples(xs, samples, data)
+            print_samples(xs, ys, samples, data)
             gt.stamp("validation_batch")
 
             log_tensorboard(ms, step=args.logstep)
@@ -191,7 +192,7 @@ def train_epoch(epoch):
 
 def predict_batch(data):
     with torch.no_grad():
-        xs, annots = data
+        xs, ys, annots = data
         xs = xs.to(args.device)
         model.eval()
         scores, samples = model.forward(xs, oracle=None)
@@ -199,17 +200,18 @@ def predict_batch(data):
     return scores, samples
 
 
-def print_samples(xs, samples, data, n=min(args.batch_size, 5)):
+def print_samples(xs, ys, samples, data, n=min(args.batch_size, 5)):
     for i in range(n):
         tokens = inds2toks(i2tok, samples[i].cpu().tolist())
         root = build_tree(tokens)
         tokens, nodes = tree_to_text(root)
         tokens_levels = [(node.value, node.level) for node in nodes]
-        gt_inds = [x for x in data[0][i].cpu().tolist() if x != tok2i['</s>'] and x != tok2i['<p>']]
+        
+        gt_inds = [x for x in ys[i].cpu().tolist() if x != tok2i['</s>'] and x != tok2i['<p>']]
         gt_tokens = inds2toks(i2tok, gt_inds)
         src_inds = [x for x in xs[i].cpu().tolist() if x != tok2i['</s>'] and x != tok2i['<p>']]
         src_tokens = inds2toks(i2tok, src_inds)
-        print('SOURCD:\t%s' % ' '.join(src_tokens))
+        print('SOURCE:\t%s' % ' '.join(src_tokens))
         print('ACTUAL:\t%s' % ' '.join(gt_tokens))
         print('PRED:\t%s' % ' '.join(tokens))
         #print(' '.join(str(x) for x in tokens_levels))
@@ -281,5 +283,5 @@ test = SentenceDataset(test, tok2i)
 testloader = DataLoader(test, batch_size=args.batch_size, shuffle=True, collate_fn=valid.collate)
 
 print('\nTEST : Epoch {0}'.format(epoch))
-evaluate(1e6, validloader, 'valid', True)
-evaluate(0, testloader, 'test', True)
+evaluate(1, validloader, 'valid', True)
+evaluate(1, testloader, 'test', True)
