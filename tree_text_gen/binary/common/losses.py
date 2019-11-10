@@ -26,7 +26,7 @@ def sequential_set_no_stop_loss(scores, samples, oracle_ps, end_idx, self_teach_
             p_oracle = (p_oracle / p_oracle.sum(1, keepdim=True)).detach()
 
         logp_policy = F.log_softmax(scores[:, t, :], dim=1)
-        loss_ = F.kl_div(logp_policy, p_oracle).sum(1)
+        loss_ = F.kl_div(logp_policy, p_oracle, reduction='none').sum(1)
 
         losses.append(loss_)
 
