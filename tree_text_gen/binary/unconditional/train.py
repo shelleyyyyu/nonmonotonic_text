@@ -20,6 +20,9 @@ from tree_text_gen.binary.common.oracle import Oracle, LeftToRightOracle
 from tree_text_gen.binary.common.losses import sequential_set_no_stop_loss, sequential_set_loss
 from tree_text_gen.binary.common.tree import tree_to_text, print_tree, build_tree
 from tree_text_gen.binary.unconditional.args import model_args
+import sys
+import io
+sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8')
 
 # -- Load model arguments
 parser = argparse.ArgumentParser()
@@ -195,10 +198,13 @@ def print_samples(xs, samples, data, n=min(args.batch_size, 5)):
         gt_tokens = inds2toks(i2tok, gt_inds)
         src_inds = [x for x in xs[i].cpu().tolist() if x != tok2i['</s>'] and x != tok2i['<p>']]
         src_tokens = inds2toks(i2tok, src_inds)
-        
-        print('SOURCD:\t%s' % ' '.join(src_tokens))
-        print('ACTUAL:\t%s' % ' '.join(gt_tokens))
-        print('PRED:\t%s' % ' '.join(tokens))
+        src_str =' '.join(src_tokens)
+        actual_str =' '.join(gt_tokens)
+        pred_str =' '.join(tokens)
+
+        print('SOURCE:\t%s' % src_str.encode("utf-8"))
+        print('ACTUAL:\t%s' % actual_str.encode("utf-8"))
+        print('PRED:\t%s' % pred_str.encode("utf-8"))
         #print(' '.join(str(x) for x in tokens_levels))
         print(print_tree(root))
         print()
