@@ -5,7 +5,7 @@ import torch as th
 
 
 def load_personachat(filepath, log=True):
-    with open(filepath, 'r') as f:
+    with open(filepath, 'r', encoding='utf-8') as f:
         with jsonlines.Reader(f) as reader:
             data = [line for line in reader]
     if log:
