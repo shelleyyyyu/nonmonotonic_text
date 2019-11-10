@@ -186,8 +186,6 @@ def print_samples(xs, samples, data, n=min(args.batch_size, 5)):
     for i in range(n):
         tokens = inds2toks(i2tok, samples[i].cpu().tolist())
         root = build_tree(tokens)
-        print("#####HERE######")
-        print(tokens)
         tokens, nodes = tree_to_text(root)
         tokens_levels = [(node.value, node.level) for node in nodes]
 
