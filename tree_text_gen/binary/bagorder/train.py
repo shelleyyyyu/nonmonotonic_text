@@ -103,7 +103,8 @@ optimizer = optim_fn(model.parameters(), **optim_params)
 val_metric_best = -1e10
 stop_training = False
 lr = optim_params['lr']
-
+print("############# tok2i #############")
+print(tok2i)
 
 def train_epoch(epoch):
     print('\nTRAINING : Epoch ' + str(epoch))
