@@ -104,7 +104,9 @@ val_metric_best = -1e10
 stop_training = False
 lr = optim_params['lr']
 print("############# tok2i #############")
-print(tok2i)
+for tid, t in enumerate(tok2i):
+    print(tid)
+    print(t)
 
 def train_epoch(epoch):
     print('\nTRAINING : Epoch ' + str(epoch))
@@ -216,7 +218,7 @@ def print_samples(xs, ys, samples, data, n=min(args.batch_size, 5)):
         src_str =' '.join(src_tokens)
         actual_str =' '.join(gt_tokens)
         pred_str =' '.join(tokens)
-        
+
         print('SOURCE:\t%s' % src_str.encode("utf-8"))
         print('ACTUAL:\t%s' % actual_str.encode("utf-8"))
         print('PRED:\t%s' % pred_str.encode("utf-8"))
