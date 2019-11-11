@@ -211,9 +211,14 @@ def print_samples(xs, ys, samples, data, n=min(args.batch_size, 5)):
         gt_tokens = inds2toks(i2tok, gt_inds)
         src_inds = [x for x in xs[i].cpu().tolist() if x != tok2i['</s>'] and x != tok2i['<p>']]
         src_tokens = inds2toks(i2tok, src_inds)
-        print('SOURCE:\t%s' % ' '.join(src_tokens))
-        print('ACTUAL:\t%s' % ' '.join(gt_tokens))
-        print('PRED:\t%s' % ' '.join(tokens))
+
+        src_str =' '.join(src_tokens)
+        actual_str =' '.join(gt_tokens)
+        pred_str =' '.join(tokens)
+        
+        print('SOURCE:\t%s' % src_str.encode("utf-8"))
+        print('ACTUAL:\t%s' % actual_str.encode("utf-8"))
+        print('PRED:\t%s' % pred_str.encode("utf-8"))
         #print(' '.join(str(x) for x in tokens_levels))
         print(print_tree(root))
         print()
