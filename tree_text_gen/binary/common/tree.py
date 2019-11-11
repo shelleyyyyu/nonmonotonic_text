@@ -175,7 +175,10 @@ def tree_to_text(root):
 
 def print_tree(root, show_index=False):
     lines = _build_tree_string(root, show_index)[0]
-    return '\n' + '\n'.join((line.rstrip() for line in lines))
+    encode_line = []
+    for line in lines:
+        encode_line.append(str(line).encode('utf-8'))
+    return '\n' + '\n'.join((str(line.rstrip()) for line in encode_line))
 
 
 def _build_tree_string(root, show_index=False):
