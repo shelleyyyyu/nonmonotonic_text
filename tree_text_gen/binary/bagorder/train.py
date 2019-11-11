@@ -223,7 +223,7 @@ def print_samples(xs, ys, samples, data, n=min(args.batch_size, 5)):
         print('ACTUAL:\t%s' % actual_str.encode("utf-8"))
         print('PRED:\t%s' % pred_str.encode("utf-8"))
         #print(' '.join(str(x) for x in tokens_levels))
-        print(print_tree(root))
+        print(print_tree(root).encode('utf-8'))
         print()
 
 
