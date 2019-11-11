@@ -106,7 +106,7 @@ lr = optim_params['lr']
 print("############# tok2i #############")
 for tid, t in enumerate(tok2i):
     print(tid)
-    print(t.encode('utf-8').decode('utf-8'))
+    print(t.encode('utf-8'))
 
 def train_epoch(epoch):
     print('\nTRAINING : Epoch ' + str(epoch))
