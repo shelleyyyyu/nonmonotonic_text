@@ -145,8 +145,8 @@ def train_epoch(epoch):
             gt.stamp("metrics.update")
             ms = metrics.report('train')
             ms['train/loss'] = round(np.mean(losses), 2)
-            logs.append('{0} ; loss {1} ; sentence/s {2} ; f1 train {3} '.format(
-                        i+1,
+            logs.append('epoch {0} ; batch {1} ; loss {2} ; sentence/s {3} ; f1 train {4} '.format(
+                        epoch+1, i+1,
                         round(np.mean(losses), 2),
                         int(len(losses) * args.batch_size / (time.time() - last_time)),
                         0,
