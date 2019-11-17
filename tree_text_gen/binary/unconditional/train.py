@@ -31,12 +31,11 @@ args = parser.parse_args()
 args = setup(args)
 
 # -- DATA
-if args.dataset == 'personachat':
-    train = load_personachat(os.path.join(args.datadir, 'train.txt'))
-    valid = load_personachat(os.path.join(args.datadir, 'valid.txt'))
-    test = load_personachat(os.path.join(args.datadir, 'test.txt'))
-    tok2i = build_tok2i(list(chain.from_iterable([d['tokens'] for d in (train + valid)])))
-    i2tok = {j: i for i, j in tok2i.items()}
+train = load_personachat(os.path.join(args.datadir, 'train.txt'))
+valid = load_personachat(os.path.join(args.datadir, 'valid.txt'))
+test = load_personachat(os.path.join(args.datadir, 'test.txt'))
+tok2i = build_tok2i(list(chain.from_iterable([d['tokens'] for d in (train + valid)])))
+i2tok = {j: i for i, j in tok2i.items()}
 
 args.n_classes = len(tok2i)
 

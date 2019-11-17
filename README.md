@@ -73,3 +73,7 @@ python tree_text_gen/binary/translation/train.py --datadir {MT_DIR} --model-type
 ```
 
 By default these commands train policies with the annealed oracle. See `tree_text_gen/{bagorder, unconditional, translation}/args.py` for hyper-parameters and arguments.
+
+
+LM: 
+CUDA_VISIBLE_DEVICES=5,0 nohup python tree_text_gen/binary/unconditional/train.py --datadir ./keyword_data/ --glovepath ./glove/glove.840B.300d.txt --log-base-dir ./output_lm  > lm.train.log 2>&1 &

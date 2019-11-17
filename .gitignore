@@ -20,3 +20,6 @@ dialogue
 models
 __hyp.txt
 __ref.txt
+roc_gen_result
+output_lm
+roc_gen_result_2
