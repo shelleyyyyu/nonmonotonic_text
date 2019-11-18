@@ -26,12 +26,12 @@ for k, v in exprs.items():
     print(v)
     models[k] = evaluate.load_model(v, k, checkpoint=CHECKPOINT)
 
-def run(topk, generation_count=10, save_dir='./roc_gen_result'):
+def run(round_id, topk, generation_count=10, save_dir='./roc_gen_result'):
     if not os.path.exists(save_dir):
         os.mkdir(save_dir)
     for name, model in models.items():
         print('=== %s ===' % name)
-        save_fname = save_dir + '/' + str(name) + '_lm_result_' + 'topk_' + str(topk) + "_gennum_" + str(generation_count) + ".txt"
+        save_fname = save_dir + '/' + str(name) + '_lm_result_' + 'topk_' + str(topk) + "_gennum_" + str(generation_count) + '_' + str(round_id) + "_bk.txt"
         print("Save file name: " , save_fname)
         k = topk
         if k == -1:
@@ -41,27 +41,25 @@ def run(topk, generation_count=10, save_dir='./roc_gen_result'):
         out = evaluate.sample(model, generation_count)
         
         with open(save_fname, 'w') as fname:
-            for o in out:
+            for oid, o in enumerate(out):
+                print(oid)
                 o_dict = {}
                 o_dict['sentence'] = ' '.join(o['inorder_tokens'])
                 o_dict['generation order'] = ' '.join(o['genorder_tokens'])
                 o_dict['tree_string'] = o['tree_string']
                 fname.write(json.dumps(o_dict)+'\n')
-    '''with open ('./roc_gen_result/uniform_lm_result_topk_100_gennum_10.txt', 'r') as fname:
-        arr = fname.readlines()
-        for a in arr:
-            a_dict = json.loads(a)
-            print(a_dict['tree_string'])'''
 
 def add_arguments(parser):
-    parser.add_argument("--topk", type=int, default=100, help="topk sampling.")
-    parser.add_argument("--generation_count", type=int, default=10, help="Generate example count.")
+    parser.add_argument("--topk", type=int, default=10000, help="topk sampling.")
+    parser.add_argument("--generation_count", type=int, default=1000, help="Generate example count.")
     parser.add_argument("--save_dir", type=str, default='./roc_gen_result', help="Result save directory.")
-
+    parser.add_argument("--loop_count", type=int, default=10, help="Result save directory.")
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     add_arguments(parser)
     args = parser.parse_args()
-    #python ./evaluate_unconditional.py --topk 100 --generation_count 10 --save_dir ./roc_gen_result
-    run(int(args.topk), int(args.generation_count), str(args.save_dir))
+    #python ./evaluate_unconditional.py --loop_count 1 --topk 100 --generation_count 10 --save_dir ./roc_gen_result
+    for i in range(args.loop_count):
+        print("ROUND", (i+1))
+        run((i+1), int(args.topk), int(args.generation_count), str(args.save_dir))

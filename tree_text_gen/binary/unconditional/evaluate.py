@@ -61,7 +61,8 @@ def sample_with_prefix(model, tree_prefix_tokens, n=10):
             samples.append(xs[:, t].detach().unsqueeze(1))
 
         # start sampling
-        for t in range(model.longest_label - xs.size(1) - 1):
+        #for t in range(model.longest_label - xs.size(1) - 1):
+        for t in range(xs.size(1) - 1+6):
             xt = model.sampler(score_t, oracle=None, training=False)
             score_t, _, hidden = model.forward_decode(xt, hidden, None)
             scores.append(score_t)
