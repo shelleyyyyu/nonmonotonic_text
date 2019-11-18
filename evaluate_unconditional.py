@@ -6,7 +6,6 @@ import json
 from glob import glob
 import torch.nn.functional as F
 import torch as th
-import seaborn as sns
 from tree_text_gen.binary.common.data import load_personachat, build_tok2i, SentenceDataset, inds2toks
 from torch.utils.data.dataloader import DataLoader
 import tree_text_gen.binary.common.samplers as samplers
