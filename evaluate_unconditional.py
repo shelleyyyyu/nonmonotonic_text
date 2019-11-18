@@ -4,8 +4,6 @@ import os
 import argparse
 import json
 from glob import glob
-from ipywidgets import interact, interactive, fixed, interact_manual
-import ipywidgets as widgets
 import torch.nn.functional as F
 import torch as th
 import seaborn as sns
