@@ -25,3 +25,4 @@ output_lm
 roc_gen_result_2
 model_ckpt/bagorder/annealed
 model_ckpt
+word_embedding

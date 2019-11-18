@@ -30,9 +30,9 @@ args = setup(args)
 
 # -- DATA
 if args.dataset == 'personachat':
-    train = load_personachat(os.path.join(args.datadir, 'personachat_all_sentences_train.jsonl'))
-    valid = load_personachat(os.path.join(args.datadir, 'personachat_all_sentences_valid.jsonl'))
-    test = load_personachat(os.path.join(args.datadir, 'personachat_all_sentences_test.jsonl'))
+    train = load_personachat(os.path.join(args.datadir, 'train.txt'))
+    valid = load_personachat(os.path.join(args.datadir, 'valid.txt'))
+    test = load_personachat(os.path.join(args.datadir, 'test.txt'))
     tok2i = build_tok2i(list(chain.from_iterable([d['tokens'] for d in (train + valid)])))
     i2tok = {j: i for i, j in tok2i.items()}
 
